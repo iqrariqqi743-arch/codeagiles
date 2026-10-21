@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -245,18 +245,71 @@ function Heading({ label, children, desc }) {
 
 function Header() {
   const [open, setOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("#home");
+
+  useEffect(() => {
+    const updateActiveSection = () => {
+      const scrollPosition = window.scrollY + 110;
+      let current = "#home";
+
+      for (const [, href] of navLinks) {
+        const section = document.getElementById(href.slice(1));
+
+        if (section) {
+          const top = section.getBoundingClientRect().top + window.scrollY;
+
+          if (top <= scrollPosition) {
+            current = href;
+          }
+        }
+      }
+
+      if (
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 5
+      ) {
+        current = "#contact";
+      }
+
+      setActiveSection(current);
+    };
+
+    window.addEventListener("scroll", updateActiveSection, {
+      passive: true,
+    });
+
+    window.addEventListener("resize", updateActiveSection);
+
+    updateActiveSection();
+
+    return () => {
+      window.removeEventListener("scroll", updateActiveSection);
+      window.removeEventListener("resize", updateActiveSection);
+    };
+  }, []);
+
+  const handleNavClick = (href) => {
+    setActiveSection(href);
+    setOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050816]/95 backdrop-blur-xl">
       <div className="site-container flex h-20 items-center justify-between gap-4">
-        <a href="#home" className="flex items-center gap-3">
+        <a
+          href="#home"
+          onClick={() => handleNavClick("#home")}
+          className="flex items-center gap-3"
+        >
           <div className="gradient-btn flex h-11 w-11 items-center justify-center rounded-xl">
             <Code2 size={25} />
           </div>
+
           <div>
             <div className="text-xl font-black">
               Code<span className="gradient-text">Agiles</span>
             </div>
+
             <div className="text-[9px] font-semibold tracking-wider text-slate-400">
               SOFTWARE HOUSE • IT TRAINING
             </div>
@@ -264,19 +317,36 @@ function Header() {
         </a>
 
         <nav className="hidden items-center gap-5 xl:flex">
-          {navLinks.map(([name, href]) => (
-            <a
-              key={name}
-              href={href}
-              className="text-xs font-semibold text-slate-300 hover:text-cyan-300"
-            >
-              {name}
-            </a>
-          ))}
+          {navLinks.map(([name, href]) => {
+            const isActive = activeSection === href;
+
+            return (
+              <a
+                key={href}
+                href={href}
+                onClick={() => handleNavClick(href)}
+                aria-current={isActive ? "location" : undefined}
+                className={`relative py-2 text-xs font-semibold transition-colors duration-200 ${
+                  isActive
+                    ? "text-cyan-300"
+                    : "text-slate-300 hover:text-cyan-300"
+                }`}
+              >
+                {name}
+
+                <span
+                  className={`absolute bottom-0 left-0 h-0.5 rounded-full bg-cyan-400 transition-all duration-200 ${
+                    isActive ? "w-full" : "w-0"
+                  }`}
+                />
+              </a>
+            );
+          })}
         </nav>
 
         <a
           href="#contact"
+          onClick={() => handleNavClick("#contact")}
           className="gradient-btn hidden items-center gap-2 rounded-full px-6 py-3 text-sm font-bold md:flex"
         >
           Get in Touch <ArrowUpRight size={17} />
@@ -286,7 +356,7 @@ function Header() {
           type="button"
           aria-label="Toggle menu"
           aria-expanded={open}
-          onClick={() => setOpen(!open)}
+          onClick={() => setOpen((prev) => !prev)}
           className="rounded-lg border border-white/20 p-2 xl:hidden"
         >
           {open ? <X /> : <Menu />}
@@ -295,16 +365,25 @@ function Header() {
 
       {open && (
         <nav className="border-t border-white/10 bg-[#0b1430] px-6 py-4 xl:hidden">
-          {navLinks.map(([name, href]) => (
-            <a
-              key={name}
-              href={href}
-              onClick={() => setOpen(false)}
-              className="block border-b border-white/5 py-3 text-sm"
-            >
-              {name}
-            </a>
-          ))}
+          {navLinks.map(([name, href]) => {
+            const isActive = activeSection === href;
+
+            return (
+              <a
+                key={href}
+                href={href}
+                onClick={() => handleNavClick(href)}
+                aria-current={isActive ? "location" : undefined}
+                className={`block border-b border-white/5 px-3 py-3 text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "border-l-2 border-l-cyan-400 bg-cyan-400/10 text-cyan-300"
+                    : "text-slate-300 hover:text-cyan-300"
+                }`}
+              >
+                {name}
+              </a>
+            );
+          })}
         </nav>
       )}
     </header>
