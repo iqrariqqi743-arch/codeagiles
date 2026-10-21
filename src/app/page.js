@@ -366,7 +366,7 @@ function HeroVisual() {
                   ["Database", "MySQL"],
                 ].map(([label, value]) => (
                   <div
-                    key={label}
+                    key={`${label}-${value}`}
                     className="rounded-xl border border-white/10 bg-white/5 p-3"
                   >
                     <p className="text-[9px] text-slate-400">{label}</p>
