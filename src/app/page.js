@@ -246,9 +246,12 @@ function Heading({ label, children, desc }) {
 function Header() {
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("#home");
+  const [loadingNav, setLoadingNav] = useState(null);
 
   useEffect(() => {
     const updateActiveSection = () => {
+      if (loadingNav) return;
+
       const scrollPosition = window.scrollY + 110;
       let current = "#home";
 
@@ -286,19 +289,54 @@ function Header() {
       window.removeEventListener("scroll", updateActiveSection);
       window.removeEventListener("resize", updateActiveSection);
     };
-  }, []);
+  }, [loadingNav]);
 
-  const handleNavClick = (href) => {
+  const handleNavClick = (e, href) => {
+    e.preventDefault();
+
+    if (loadingNav) return;
+
+    setLoadingNav(href);
     setActiveSection(href);
     setOpen(false);
+
+    setTimeout(() => {
+      const section = document.getElementById(href.slice(1));
+
+      if (section) {
+        section.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+
+      window.history.replaceState(null, "", href);
+      setLoadingNav(null);
+    }, 700);
   };
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050816]/95 backdrop-blur-xl">
+      {/* NAVBAR TOP LOADER */}
+      {loadingNav && (
+        <div className="absolute inset-x-0 top-0 z-[60] h-[4px] overflow-hidden bg-cyan-400/10">
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: "0%" }}
+            transition={{
+              duration: 0.7,
+              ease: "easeInOut",
+            }}
+            className="h-full w-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 shadow-[0_0_18px_#22d3ee]"
+          />
+        </div>
+      )}
+
       <div className="site-container flex h-20 items-center justify-between gap-4">
+        {/* LOGO */}
         <a
           href="#home"
-          onClick={() => handleNavClick("#home")}
+          onClick={(e) => handleNavClick(e, "#home")}
           className="flex items-center gap-3"
         >
           <div className="gradient-btn flex h-11 w-11 items-center justify-center rounded-xl">
@@ -316,17 +354,19 @@ function Header() {
           </div>
         </a>
 
+        {/* DESKTOP NAVIGATION */}
         <nav className="hidden items-center gap-5 xl:flex">
           {navLinks.map(([name, href]) => {
             const isActive = activeSection === href;
+            const isLoading = loadingNav === href;
 
             return (
               <a
                 key={href}
                 href={href}
-                onClick={() => handleNavClick(href)}
+                onClick={(e) => handleNavClick(e, href)}
                 aria-current={isActive ? "location" : undefined}
-                className={`relative py-2 text-xs font-semibold transition-colors duration-200 ${
+                className={`relative flex items-center gap-1.5 py-2 text-xs font-semibold transition-colors duration-200 ${
                   isActive
                     ? "text-cyan-300"
                     : "text-slate-300 hover:text-cyan-300"
@@ -334,6 +374,20 @@ function Header() {
               >
                 {name}
 
+                {/* SMALL LOADER BESIDE ACTIVE NAV LINK */}
+                {isLoading && (
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 0.7,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    className="inline-block h-3 w-3 rounded-full border-2 border-cyan-400/30 border-t-cyan-300"
+                  />
+                )}
+
+                {/* ACTIVE UNDERLINE */}
                 <span
                   className={`absolute bottom-0 left-0 h-0.5 rounded-full bg-cyan-400 transition-all duration-200 ${
                     isActive ? "w-full" : "w-0"
@@ -344,14 +398,29 @@ function Header() {
           })}
         </nav>
 
+        {/* GET IN TOUCH */}
         <a
           href="#contact"
-          onClick={() => handleNavClick("#contact")}
+          onClick={(e) => handleNavClick(e, "#contact")}
           className="gradient-btn hidden items-center gap-2 rounded-full px-6 py-3 text-sm font-bold md:flex"
         >
-          Get in Touch <ArrowUpRight size={17} />
+          Get in Touch
+          {loadingNav === "#contact" ? (
+            <motion.span
+              animate={{ rotate: 360 }}
+              transition={{
+                duration: 0.7,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+              className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
+            />
+          ) : (
+            <ArrowUpRight size={17} />
+          )}
         </a>
 
+        {/* MOBILE MENU BUTTON */}
         <button
           type="button"
           aria-label="Toggle menu"
@@ -363,24 +432,38 @@ function Header() {
         </button>
       </div>
 
+      {/* MOBILE NAVIGATION */}
       {open && (
         <nav className="border-t border-white/10 bg-[#0b1430] px-6 py-4 xl:hidden">
           {navLinks.map(([name, href]) => {
             const isActive = activeSection === href;
+            const isLoading = loadingNav === href;
 
             return (
               <a
                 key={href}
                 href={href}
-                onClick={() => handleNavClick(href)}
+                onClick={(e) => handleNavClick(e, href)}
                 aria-current={isActive ? "location" : undefined}
-                className={`block border-b border-white/5 px-3 py-3 text-sm font-semibold transition-colors ${
+                className={`flex items-center justify-between border-b border-white/5 px-3 py-3 text-sm font-semibold transition-colors ${
                   isActive
                     ? "border-l-2 border-l-cyan-400 bg-cyan-400/10 text-cyan-300"
                     : "text-slate-300 hover:text-cyan-300"
                 }`}
               >
                 {name}
+
+                {isLoading && (
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 0.7,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    className="h-4 w-4 rounded-full border-2 border-cyan-400/30 border-t-cyan-300"
+                  />
+                )}
               </a>
             );
           })}
